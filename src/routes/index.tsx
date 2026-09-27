@@ -187,7 +187,7 @@ function HazardGrid() {
 
 function ForecastChart() {
   const [active, setActive] = useState(3);
-  const selected = forecast[active];
+  const selected = forecast[active] ?? forecast[0] ?? { time: "NOW", risk: 0, hail: 0, lightning: 0 };
   return (
     <section id="forecast" className="instrument-panel">
       <div className="section-header"><div><span className="data-label">Probabilistic guidance</span><h2 className="section-title">0–6 hour convective nowcast</h2></div><div className="chart-legend"><span className="legend-risk">Composite</span><span className="legend-hail">Hail</span><span className="legend-lightning">Lightning</span></div></div>
