@@ -1,34 +1,33 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
   Activity,
+  BellRing,
   Bot,
   ChevronDown,
-  CircleGauge,
+  CloudLightning,
   CloudRain,
   Crosshair,
   Database,
-  ExternalLink,
-  Eye,
   Gauge,
-  Globe2,
-  Info,
   Layers3,
   LocateFixed,
   Map,
   Menu,
-  MessageCircleQuestion,
   Pause,
   Play,
   Radio,
   RotateCcw,
   Send,
   Settings2,
-  ShieldCheck,
+  ShieldAlert,
   SlidersHorizontal,
   Sparkles,
+  ThermometerSun,
   Wind,
   X,
   Zap,
+  ZoomIn,
+  ZoomOut,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 
@@ -39,86 +38,42 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "StormSense | Weather Intelligence Command Centre" },
-      {
-        name: "description",
-        content:
-          "A light, operational weather intelligence command centre for convective storm nowcasting in India.",
-      },
-      { property: "og:title", content: "StormSense Weather Command Centre" },
-      {
-        property: "og:description",
-        content: "Live storm analysis, hazard diagnostics, and short-range convective nowcasting.",
-      },
+      { title: "StormSense | Convective Storm Operations" },
+      { name: "description", content: "Operational storm sensing, hazard diagnostics, and six-hour convective nowcasting for Vijayawada." },
+      { property: "og:title", content: "StormSense Convective Storm Operations" },
+      { property: "og:description", content: "Radar-led storm analysis, hazard probabilities, and atmospheric scenario simulation." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: WeatherCommandCentre,
+  component: StormOperations,
 });
 
-const timelines = [
-  ["NOW", "10.7%"],
-  ["+15m", "10.7%"],
-  ["+30m", "10.7%"],
-  ["+45m", "10.7%"],
-  ["+1h", "10.7%"],
-  ["+90m", "10.7%"],
-  ["+2h", "7.8%"],
-  ["+3h", "6.4%"],
-  ["+4h", "5.0%"],
-  ["+5h", "3.5%"],
-  ["+6h", "2.1%"],
-];
-
 const hazards = [
-  {
-    title: "Severe Hail Core",
-    value: "15.3%",
-    status: "MODERATE",
-    detail: "Hailstone diameter: 3.2 cm",
-    note: "30.6 dBZ core aloft",
-    color: "cyan",
-    icon: Crosshair,
-  },
-  {
-    title: "Lightning Hazard",
-    value: "32%",
-    status: "ELEVATED",
-    detail: "Discharge rate: ~34 strikes/min",
-    note: "Frequent CG strokes",
-    color: "violet",
-    icon: Zap,
-  },
-  {
-    title: "Cloudburst Hazard",
-    value: "41.8%",
-    status: "HIGH IMPACT",
-    detail: "Precip rate: 65 mm/hr",
-    note: "Extreme downpour rate",
-    color: "blue",
-    icon: CloudRain,
-  },
-  {
-    title: "Downburst / Gusts",
-    value: "46.1%",
-    status: "STRONG GUST",
-    detail: "Outflow squall: Gale Force 8",
-    note: "Peak squall gusts ~22.7 km/h",
-    color: "amber",
-    icon: Wind,
-  },
+  { label: "Hail core", value: 15.3, unit: "%", state: "MODERATE", detail: "3.2 cm estimated", tone: "cool", icon: Crosshair },
+  { label: "Lightning", value: 32, unit: "%", state: "ELEVATED", detail: "34 strikes / min", tone: "electric", icon: Zap },
+  { label: "Cloudburst", value: 41.8, unit: "%", state: "HIGH", detail: "65 mm / hr", tone: "rain", icon: CloudRain },
+  { label: "Downburst", value: 46.1, unit: "%", state: "STRONG", detail: "22.7 km/h gust", tone: "warning", icon: Wind },
 ] as const;
 
-function BrandMark() {
+const forecast = [
+  { time: "NOW", risk: 11, hail: 6, lightning: 14 },
+  { time: "+30m", risk: 18, hail: 10, lightning: 23 },
+  { time: "+1h", risk: 28, hail: 16, lightning: 35 },
+  { time: "+2h", risk: 42, hail: 25, lightning: 49 },
+  { time: "+3h", risk: 36, hail: 22, lightning: 43 },
+  { time: "+4h", risk: 24, hail: 15, lightning: 31 },
+  { time: "+5h", risk: 14, hail: 9, lightning: 20 },
+  { time: "+6h", risk: 7, hail: 4, lightning: 11 },
+];
+
+function Brand() {
   return (
     <div className="flex items-center gap-3">
-      <span className="brand-mark" aria-hidden="true">
-        <Radio className="size-5" />
-      </span>
+      <span className="brand-radar"><Radio className="size-5" /></span>
       <span>
-        <strong className="block font-display text-base leading-none text-foreground">STORMSENSE</strong>
-        <span className="mt-1 block text-[10px] font-semibold uppercase text-primary">Weather intelligence · India</span>
+        <strong className="block font-display text-base leading-none">StormSense</strong>
+        <small className="mt-1 block font-mono text-[9px] font-semibold uppercase text-muted-foreground">Convective operations · India</small>
       </span>
     </div>
   );
@@ -127,316 +82,174 @@ function BrandMark() {
 function Header() {
   const [open, setOpen] = useState(false);
   return (
-    <header className="sticky top-0 z-50 border-b border-border/80 bg-background/80 backdrop-blur-xl">
-      <div className="mx-auto flex h-16 max-w-screen-2xl items-center justify-between px-4 md:px-7">
-        <BrandMark />
-        <nav className="hidden items-center gap-1 md:flex" aria-label="Primary navigation">
-          <a className="nav-link" href="#overview">Overview</a>
-          <a className="nav-link nav-link-active" href="#command-centre">Command centre</a>
-          <a className="nav-link" href="#architecture">Explore architecture</a>
+    <header className="ops-header">
+      <div className="mx-auto flex h-16 max-w-[1560px] items-center justify-between px-4 md:px-6">
+        <Brand />
+        <nav className="hidden h-full items-center lg:flex" aria-label="Main navigation">
+          <a className="ops-nav ops-nav-active" href="#radar">Radar</a>
+          <a className="ops-nav" href="#hazards">Hazards</a>
+          <a className="ops-nav" href="#forecast">Nowcast</a>
+          <a className="ops-nav" href="#simulator">Simulator</a>
         </nav>
-        <div className="hidden items-center gap-4 text-xs font-semibold text-muted-foreground sm:flex">
-          <span className="flex items-center gap-2"><span className="size-2 rounded-full bg-success shadow-status" /> LIVE</span>
-          <span className="flex items-center gap-2"><Globe2 className="size-4" /> INDIA</span>
+        <div className="hidden items-center gap-5 sm:flex">
+          <div className="text-right"><span className="data-label">Last scan</span><strong className="data-value text-xs">08:06:32 IST</strong></div>
+          <span className="live-indicator"><i /> LIVE FEED</span>
+          <Button variant="outline" size="icon" aria-label="Notification centre"><BellRing className="size-4" /></Button>
         </div>
-        <Button variant="ghost" size="icon" className="md:hidden" aria-label="Open navigation" onClick={() => setOpen(!open)}>
-          {open ? <X className="size-5" /> : <Menu className="size-5" />}
-        </Button>
+        <Button variant="ghost" size="icon" className="sm:hidden" aria-label="Open navigation" onClick={() => setOpen((value) => !value)}>{open ? <X className="size-5" /> : <Menu className="size-5" />}</Button>
       </div>
-      {open && (
-        <nav className="border-t border-border bg-background px-4 py-3 md:hidden" aria-label="Mobile navigation">
-          <a className="mobile-nav" href="#overview">Overview</a>
-          <a className="mobile-nav text-primary" href="#command-centre">Command centre</a>
-          <a className="mobile-nav" href="#architecture">Explore architecture</a>
-        </nav>
-      )}
+      {open && <nav className="border-t border-border bg-card px-4 py-2 sm:hidden"><a className="mobile-link" href="#radar">Radar</a><a className="mobile-link" href="#hazards">Hazards</a><a className="mobile-link" href="#forecast">Nowcast</a><a className="mobile-link" href="#simulator">Simulator</a></nav>}
     </header>
   );
 }
 
-function TopBar({ paused, setPaused }: { paused: boolean; setPaused: (next: boolean) => void }) {
+function OperationsBar({ paused, onPause }: { paused: boolean; onPause: () => void }) {
   const [scenario, setScenario] = useState("Rapid Intensification");
   return (
-    <section className="glass-panel p-4" id="overview">
-      <div className="flex flex-col justify-between gap-4 xl:flex-row xl:items-center">
-        <div className="flex min-w-0 items-center gap-3">
-          <span className="brand-mark size-11"><CloudRain className="size-6" /></span>
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="font-display text-xl font-bold text-foreground">STORMSENSE <span className="text-primary">AI</span></h1>
-              <span className="status-pill bg-danger/10 text-danger">HAILSTORM NOWCAST</span>
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">Convective-scale nowcasting &amp; early warning system · 0–6h</p>
-          </div>
+    <section className="ops-strip">
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="threat-badge"><ShieldAlert className="size-3.5" /> SEVERE WEATHER WATCH</span>
+          <span className="text-xs font-semibold text-foreground">Vijayawada Urban Zone</span>
         </div>
-        <div className="segmented-control" aria-label="Workspace selection">
-          <button className="segment-active"><Map className="size-4" /> GIS Command Center</button>
-          <button><ShieldCheck className="size-4" /> Eco &amp; Agri Defense</button>
-          <button><Layers3 className="size-4" /> Architecture Explorer</button>
-        </div>
+        <p className="mt-1 text-[11px] text-muted-foreground">Cell VJY-04 · 16.5062° N, 80.6480° E · Southeast track at 42 km/h</p>
       </div>
-      <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border/70 pt-3">
-        <label className="relative">
-          <span className="sr-only">Scenario</span>
-          <select className="h-9 appearance-none rounded-md border border-border bg-card/80 py-0 pl-3 pr-9 text-xs font-semibold text-foreground outline-none focus:ring-2 focus:ring-ring" value={scenario} onChange={(event) => setScenario(event.target.value)}>
-            <option>Rapid Intensification</option>
-            <option>Cloudburst Escalation</option>
-            <option>Downburst Tracking</option>
-          </select>
-          <ChevronDown className="pointer-events-none absolute right-2 top-2.5 size-4 text-muted-foreground" />
+      <div className="flex flex-wrap items-center gap-2">
+        <label className="select-wrap">
+          <span className="sr-only">Forecast scenario</span>
+          <select value={scenario} onChange={(event) => setScenario(event.target.value)}><option>Rapid Intensification</option><option>Cloudburst Escalation</option><option>Downburst Tracking</option></select>
+          <ChevronDown className="size-4" />
         </label>
-        <Button variant={paused ? "primary" : "danger"} size="sm" onClick={() => setPaused(!paused)}>
-          {paused ? <Play className="size-3.5" /> : <Pause className="size-3.5" />} {paused ? "RESUME" : "PAUSE"}
-        </Button>
-        <span className="status-pill bg-primary/10 text-primary"><Activity className="size-3" /> 1×</span>
-        <span className="status-pill bg-success/10 text-success"><span className="size-1.5 rounded-full bg-success" /> 5/5 FEEDS OK</span>
+        <Button variant={paused ? "default" : "destructive"} size="sm" onClick={onPause}>{paused ? <Play className="size-3.5" /> : <Pause className="size-3.5" />}{paused ? "Resume feed" : "Pause feed"}</Button>
       </div>
     </section>
   );
 }
 
-function MapPanel() {
+function RadarMap() {
+  const [layer, setLayer] = useState("Reflectivity");
   return (
-    <section className="relative min-h-[520px] overflow-hidden rounded-lg border border-border shadow-panel lg:min-h-[620px]" aria-label="Live storm observation map">
-      <img src={weatherMap} alt="Satellite storm observation over Vijayawada and Guntur" className="absolute inset-0 size-full object-cover" width={1408} height={912} />
-      <div className="absolute inset-0 bg-map-wash" />
-      <div className="map-title left-4 top-4">
-        <span className="text-[10px] font-semibold uppercase text-muted-foreground">Convective cluster · Detection true</span>
-        <strong className="mt-1 block text-sm text-foreground">Vijayawada short-range outlook</strong>
+    <section id="radar" className="radar-shell" aria-label="Live composite weather radar">
+      <img src={weatherMap} alt="Satellite and radar composite over Vijayawada" className="absolute inset-0 size-full object-cover" width={1408} height={912} />
+      <div className="radar-shade" />
+      <div className="radar-grid" />
+      <div className="radar-sweep" />
+      <div className="radar-topbar">
+        <div><span className="data-label">Composite observation</span><h1 className="mt-1 font-display text-base font-semibold">Vijayawada Doppler Radar</h1></div>
+        <span className="live-indicator"><i /> SCAN 08:06</span>
       </div>
-      <div className="map-title right-4 top-4 hidden text-right sm:block">
-        <strong className="text-sm text-foreground">42 km/h · 135° SE</strong>
-        <span className="mt-1 block text-[10px] font-semibold text-danger">Intensity: 15% (Dissipating)</span>
-      </div>
-      <div className="absolute left-4 top-24 w-[220px] rounded-md border border-border/80 bg-card/80 p-3 shadow-panel backdrop-blur-xl sm:top-20">
-        <p className="eyebrow">Earth observation sensors</p>
+      <div className="layer-panel">
+        <span className="data-label">Observation layer</span>
         <div className="mt-2 grid grid-cols-2 gap-1.5">
-          {["Satellite", "INSAT IR", "Relief Topo", "Standard OSM"].map((item, index) => (
-            <span key={item} className={cn("map-chip", index === 0 && "map-chip-active")}>{item}</span>
-          ))}
+          {["Reflectivity", "Velocity", "Lightning", "Infrared"].map((item) => <Button key={item} type="button" variant={layer === item ? "default" : "secondary"} size="sm" onClick={() => setLayer(item)}>{item}</Button>)}
         </div>
-        <p className="mt-3 eyebrow">Convective overlays</p>
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {[
-            ["Hail Buffers", "text-danger"], ["0–6h Vector", "text-primary"], ["Strikes (2)", "text-violet"], ["Radar Sweep", "text-cyan"],
-          ].map(([item, color]) => <span key={item} className={cn("map-chip", color)}>{item}</span>)}
-        </div>
+        <div className="mt-3 border-t border-border pt-3"><span className="data-label">Reflectivity dBZ</span><div className="reflectivity-scale mt-2" /><div className="mt-1 flex justify-between font-mono text-[8px] text-muted-foreground"><span>5</span><span>20</span><span>35</span><span>50</span><span>65+</span></div></div>
       </div>
-      <div className="absolute right-4 top-24 flex flex-col gap-1">
-        <Button variant="secondary" size="icon" aria-label="Zoom in">+</Button>
-        <Button variant="secondary" size="icon" aria-label="Zoom out">−</Button>
-        <Button variant="secondary" size="icon" aria-label="Locate"><LocateFixed className="size-4" /></Button>
-      </div>
-      <div className="absolute left-[51%] top-[42%] -translate-x-1/2 rounded-md border border-primary/30 bg-card/85 px-3 py-2 text-xs font-bold text-primary shadow-panel backdrop-blur-xl">
-        <span className="mr-2 inline-block size-2 animate-pulse rounded-full bg-danger" /> Vijayawada Urban Asset
-      </div>
-      <div className="absolute inset-x-3 bottom-3 flex items-center justify-between rounded-md border border-border/70 bg-card/80 px-3 py-2 text-[10px] text-muted-foreground backdrop-blur-xl">
-        <span>Satellite + radar composite · Updated 08:06 IST</span>
-        <Info className="size-4 text-foreground" />
-      </div>
+      <div className="map-tools"><Button variant="secondary" size="icon" aria-label="Zoom in"><ZoomIn className="size-4" /></Button><Button variant="secondary" size="icon" aria-label="Zoom out"><ZoomOut className="size-4" /></Button><Button variant="secondary" size="icon" aria-label="Locate storm"><LocateFixed className="size-4" /></Button><Button variant="secondary" size="icon" aria-label="Map layers"><Layers3 className="size-4" /></Button></div>
+      <div className="storm-marker"><span className="storm-ring" /><i /><b>VJY-04</b><small>41.8% cloudburst</small></div>
+      <div className="radar-readout"><span>RANGE 120 KM</span><span>ELEV 0.5°</span><span>RES 250 M</span><span className="hidden sm:inline">SOURCE INSAT-3DR + DWR</span></div>
     </section>
   );
 }
 
-function AnalystPanel() {
+function Metric({ label, value, unit, detail, tone = "primary" }: { label: string; value: string; unit: string; detail: string; tone?: string }) {
+  return <div className={cn("metric-cell", `metric-${tone}`)}><span className="data-label">{label}</span><div className="mt-2 flex items-baseline gap-1"><strong className="font-display text-2xl">{value}</strong><span className="font-mono text-[10px] text-muted-foreground">{unit}</span></div><span className="mt-2 block text-[10px] text-muted-foreground">{detail}</span></div>;
+}
+
+function TelemetryRail() {
   const [messages, setMessages] = useState<string[]>([]);
   const [input, setInput] = useState("");
-  const send = (value: string) => {
-    const trimmed = value.trim();
-    if (!trimmed) return;
-    setMessages((current) => [...current, trimmed]);
-    setInput("");
-  };
+  const submit = (value: string) => { const next = value.trim(); if (!next) return; setMessages((items) => [...items, next]); setInput(""); };
   return (
-    <aside className="glass-panel flex min-h-[520px] flex-col p-4 lg:min-h-[620px]" aria-label="AI storm analyst">
-      <div className="flex items-start justify-between gap-3 border-b border-border/70 pb-4">
-        <div className="flex gap-3">
-          <span className="icon-tile bg-primary/10 text-primary"><Bot className="size-5" /></span>
-          <div>
-            <h2 className="section-title">AI Storm Analyst</h2>
-            <p className="mt-1 text-[11px] text-muted-foreground">Explainable convective intelligence &amp; tactical advisory</p>
-          </div>
-        </div>
-        <span className="status-pill bg-success/10 text-success">LIVE</span>
+    <aside className="telemetry-rail">
+      <div className="panel-heading"><div><span className="data-label">Storm telemetry</span><h2 className="mt-1 font-display text-sm font-semibold">Live sensor fusion</h2></div><Settings2 className="size-4 text-muted-foreground" /></div>
+      <div className="grid grid-cols-2">
+        <Metric label="Wind velocity" value="42.8" unit="KM/H" detail="135° SE" />
+        <Metric label="Pressure" value="998.2" unit="HPA" detail="−4.2 / 3h" tone="danger" />
+        <Metric label="Rain rate" value="65" unit="MM/H" detail="Extreme" tone="rain" />
+        <Metric label="Lightning" value="34" unit="STR/MIN" detail="CG frequent" tone="warning" />
       </div>
-      <div className="mt-3 flex items-center justify-between gap-2">
-        <span className="status-pill bg-secondary text-muted-foreground"><Settings2 className="size-3" /> Convective diagnostics</span>
-        <Button variant="secondary" size="sm"><SlidersHorizontal className="size-3.5" /> Threat dossier</Button>
+      <div className="advisory-block">
+        <div className="flex items-center gap-2"><span className="icon-compact"><Bot className="size-4" /></span><div><span className="data-label">Storm analyst</span><h2 className="font-display text-sm font-semibold">Operational advisory</h2></div></div>
+        <p className="mt-3 text-xs leading-5">Deep convection is consolidating east of Vijayawada. Lightning jump and rainfall rates support a <b>high-impact cloudburst signal</b> through the next 90 minutes.</p>
+        <div className="mt-3 space-y-2">{messages.map((message, index) => <div key={`${message}-${index}`} className="analyst-message">{message}</div>)}</div>
+        <div className="mt-3 flex flex-wrap gap-1.5">{["Explain cloudburst risk", "Show impact window"].map((prompt) => <Button key={prompt} variant="outline" size="sm" onClick={() => submit(prompt)}>{prompt}</Button>)}</div>
+        <form className="mt-3 flex gap-2" onSubmit={(event) => { event.preventDefault(); submit(input); }}><input className="ops-input" value={input} onChange={(event) => setInput(event.target.value)} placeholder="Ask about this storm cell…" aria-label="Ask StormSense analyst" /><Button type="submit" size="icon" aria-label="Send"><Send className="size-4" /></Button></form>
       </div>
-      <div className="mt-4 rounded-md border border-border bg-card/70 p-4 shadow-soft">
-        <p className="text-sm leading-6 text-foreground">
-          <span className="font-semibold text-primary">I am your StormSense AI Convective Analyst</span>, powered by high-speed inference. I interpret the multi-source Doppler radar, INSAT thermal imagery, and electrical lightning data to provide explainable early warnings.
-        </p>
-        <p className="mt-3 text-[10px] text-muted-foreground">08:06 AM · Advisory brief</p>
-      </div>
-      <div className="mt-3 space-y-2">
-        {messages.map((message) => (
-          <div key={`${message}-${messages.indexOf(message)}`} className="ml-auto max-w-[90%] rounded-md bg-primary px-3 py-2 text-xs leading-5 text-primary-foreground">
-            {message}
-          </div>
-        ))}
-      </div>
-      <div className="mt-auto pt-5">
-        <div className="mb-3 flex flex-wrap gap-2">
-          {["Why is this area high risk?", "What is the hail damage potential?"].map((prompt) => (
-            <button key={prompt} className="suggestion-chip" onClick={() => send(prompt)}>{prompt}</button>
-          ))}
-        </div>
-        <form className="flex gap-2" onSubmit={(event) => { event.preventDefault(); send(input); }}>
-          <input value={input} onChange={(event) => setInput(event.target.value)} className="h-10 min-w-0 flex-1 rounded-md border border-input bg-card/80 px-3 text-xs text-foreground outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-ring" placeholder="Ask StormSense AI about hail, radar dBZ, or arrival…" aria-label="Ask StormSense AI" />
-          <Button type="submit" size="icon" aria-label="Send message"><Send className="size-4" /></Button>
-        </form>
-      </div>
+      <div className="warning-log"><div className="panel-heading"><div><span className="data-label">Warning log</span><h2 className="mt-1 font-display text-sm font-semibold">Active advisories</h2></div><span className="count-badge">02</span></div><div className="warning-item warning-critical"><b>08:04</b><span><strong>Cloudburst threshold exceeded</strong><small>Rain rate above 60 mm/h</small></span></div><div className="warning-item warning-watch"><b>07:58</b><span><strong>Lightning jump detected</strong><small>+18 strikes in 10 minutes</small></span></div></div>
     </aside>
   );
 }
 
-function RiskSummary() {
-  return (
-    <section className="glass-panel flex flex-col gap-5 border-l-4 border-l-success p-4 md:flex-row md:items-center md:justify-between">
-      <div className="flex items-center gap-3">
-        <span className="icon-tile bg-success/10 text-success"><ShieldCheck className="size-5" /></span>
-        <div>
-          <div className="flex flex-wrap items-center gap-2"><h2 className="section-title">Composite Convective Risk</h2><span className="status-pill bg-success/10 text-success">LOW WARNING</span></div>
-          <p className="mt-1 text-[11px] text-muted-foreground">Multi-source fusion: reflectivity + cloud-top + lightning jump + CAPE</p>
-        </div>
-      </div>
-      <div className="flex items-center gap-4">
-        <div className="risk-ring"><Activity className="size-5 text-success" /></div>
-        <div><strong className="font-display text-4xl text-success">32%</strong><span className="block text-[10px] font-semibold uppercase text-muted-foreground">Convective score</span></div>
-        <Button variant="secondary" size="sm"><Info className="size-3.5" /> Why low risk?</Button>
-      </div>
-    </section>
-  );
-}
-
 function HazardGrid() {
-  return (
-    <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      {hazards.map((hazard) => {
-        const Icon = hazard.icon;
-        return (
-          <article key={hazard.title} className={cn("hazard-card", `hazard-${hazard.color}`)}>
-            <div className="flex items-center justify-between gap-2"><span className="icon-tile"><Icon className="size-5" /></span><span className="status-pill">{hazard.status}</span></div>
-            <h3 className="mt-4 text-sm font-semibold text-muted-foreground">{hazard.title}</h3>
-            <strong className="mt-1 block font-mono text-3xl text-foreground">{hazard.value}</strong>
-            <div className="mt-4 h-1 overflow-hidden rounded-full bg-muted"><div className="hazard-progress" /></div>
-            <p className="mt-3 text-[11px] font-semibold">{hazard.detail}</p>
-            <p className="mt-2 text-[10px] text-muted-foreground">{hazard.note}</p>
-          </article>
-        );
-      })}
-    </section>
-  );
+  return <section id="hazards"><div className="section-header"><div><span className="data-label">Probability diagnostics</span><h2 className="section-title">Hazard matrix</h2></div><span className="text-[10px] text-muted-foreground">RF ensemble · Confidence 82%</span></div><div className="hazard-grid">{hazards.map((hazard) => { const Icon = hazard.icon; return <article key={hazard.label} className={cn("hazard-card", `tone-${hazard.tone}`)}><div className="flex items-start justify-between"><span className="hazard-icon"><Icon className="size-4" /></span><span className="hazard-state">{hazard.state}</span></div><span className="mt-4 block text-xs font-semibold text-muted-foreground">{hazard.label}</span><div className="mt-1 flex items-baseline gap-1"><strong className="font-display text-3xl">{hazard.value}</strong><span className="font-mono text-xs text-muted-foreground">{hazard.unit}</span></div><div className="prob-track"><i style={{ width: `${hazard.value}%` }} /></div><span className="mt-3 block text-[10px] text-muted-foreground">{hazard.detail}</span></article>; })}</div></section>;
 }
 
-function ImpactAlert() {
+function ForecastChart() {
+  const [active, setActive] = useState(3);
+  const selected = forecast[active] ?? forecast[0] ?? { time: "NOW", risk: 0, hail: 0, lightning: 0 };
   return (
-    <section className="glass-panel flex flex-col gap-4 border-l-4 border-l-danger p-4 md:flex-row md:items-center md:justify-between">
-      <div className="flex items-center gap-3">
-        <span className="icon-tile bg-danger/10 text-danger"><Gauge className="size-5" /></span>
-        <div>
-          <p className="eyebrow text-danger">Storm approaching target <span className="ml-2 status-pill bg-danger/10 text-danger">IMMINENT IMPACT</span></p>
-          <h2 className="mt-2 text-base font-bold text-foreground">Vijayawada Urban Zone</h2>
-          <p className="mt-1 text-[11px] text-muted-foreground">Distance: <b className="text-primary">1564.8 km</b> · Speed: <b>42 km/h</b> · Vector: <b>135° SE</b></p>
+    <section id="forecast" className="instrument-panel">
+      <div className="section-header"><div><span className="data-label">Probabilistic guidance</span><h2 className="section-title">0–6 hour convective nowcast</h2></div><div className="chart-legend"><span className="legend-risk">Composite</span><span className="legend-hail">Hail</span><span className="legend-lightning">Lightning</span></div></div>
+      <div className="forecast-summary"><div><span className="data-label">Selected horizon</span><strong>{selected.time}</strong></div><div><span className="data-label">Composite risk</span><strong>{selected.risk}%</strong></div><div><span className="data-label">Peak window</span><strong>+2h</strong></div><div><span className="data-label">Confidence</span><strong>82%</strong></div></div>
+      <div className="chart-frame">
+        <div className="y-axis"><span>60%</span><span>40%</span><span>20%</span><span>0%</span></div>
+        <div className="chart-canvas">
+          <div className="chart-gridlines" /><div className="threshold-line"><span>WATCH THRESHOLD</span></div>
+          <svg viewBox="0 0 800 220" preserveAspectRatio="none" className="absolute inset-0 size-full" aria-label="Storm probability forecast graph">
+            <path className="confidence-area" d="M0,167 L114,139 L228,98 L342,48 L456,67 L570,108 L684,143 L800,167 L800,196 L684,173 L570,144 L456,109 L342,88 L228,133 L114,164 L0,190 Z" />
+            <polyline className="line-risk" points="0,180 114,154 228,117 342,66 456,88 570,132 684,165 800,191" />
+            <polyline className="line-hail" points="0,197 114,181 228,159 342,128 456,139 570,164 684,185 800,204" />
+            <polyline className="line-lightning" points="0,169 114,136 228,94 342,43 456,67 570,112 684,148 800,180" />
+          </svg>
         </div>
       </div>
-      <div className="rounded-md border border-danger/20 bg-danger/5 px-6 py-3 text-center">
-        <span className="text-[10px] font-semibold uppercase text-muted-foreground">Estimated arrival time</span>
-        <strong className="mt-1 block font-mono text-3xl text-danger">37:15:25</strong>
-        <span className="text-[10px] text-danger">Countdown to urban perimeter impact</span>
-      </div>
+      <div className="forecast-tabs">{forecast.map((item, index) => <Button key={item.time} variant={active === index ? "default" : "ghost"} size="sm" onClick={() => setActive(index)}><span>{item.time}</span><small>{item.risk}%</small></Button>)}</div>
     </section>
   );
 }
 
-function Timeline() {
-  const [active, setActive] = useState(0);
-  return (
-    <section className="glass-panel p-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="section-title flex items-center gap-2"><CircleGauge className="size-4 text-primary" /> 0–6 Hour Convective Nowcast Timeline</h2>
-        <p className="text-[11px] text-muted-foreground">Projected at <b className="text-primary">NOW</b> · Risk: <b className="text-amber">10.7%</b> · Hail: <b className="text-cyan">6%</b> · Lightning: <b className="text-violet">13.8%</b></p>
-      </div>
-      <div className="mt-4 grid grid-cols-4 gap-2 sm:grid-cols-6 xl:grid-cols-11">
-        {timelines.map(([time, risk], index) => (
-          <button key={time} className={cn("timeline-step", active === index && "timeline-step-active")} onClick={() => setActive(index)}>
-            <b>{time}</b><span className="mt-1 size-2 rounded-full bg-success" /><small>{risk}</small>
-          </button>
-        ))}
-      </div>
-      <div className="chart mt-5" aria-label="Projected storm risk line chart">
-        <div className="chart-grid" />
-        <svg viewBox="0 0 1000 110" preserveAspectRatio="none" className="absolute inset-0 size-full" aria-hidden="true">
-          <polyline points="0,65 100,64 200,64 300,63 400,63 500,65 600,68 700,75 800,83 900,90 1000,96" fill="none" stroke="var(--cyan)" strokeWidth="4" />
-          <polyline points="0,72 100,71 200,70 300,70 400,71 500,74 600,79 700,84 800,89 900,94 1000,98" fill="none" stroke="var(--violet)" strokeWidth="3" />
-          <polyline points="0,78 100,78 200,77 300,77 400,78 500,80 600,84 700,88 800,92 900,96 1000,99" fill="none" stroke="var(--danger)" strokeWidth="3" />
-        </svg>
-      </div>
-    </section>
-  );
-}
-
-function ExperimentEngine() {
-  const defaults = { core: 78, humidity: 80, wind: 38 };
+function Simulator() {
+  const defaults = { moisture: 72, instability: 68, shear: 44 };
   const [values, setValues] = useState(defaults);
   const [running, setRunning] = useState(false);
-  const score = useMemo(() => Math.round((values.core * 0.35 + values.humidity * 0.4 + values.wind * 0.25) / 3), [values]);
+  const score = useMemo(() => Math.round(values.moisture * .38 + values.instability * .4 + values.shear * .22), [values]);
   const update = (key: keyof typeof values, value: number) => setValues((current) => ({ ...current, [key]: value }));
   return (
-    <section className="glass-panel p-4" id="architecture">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div><h2 className="section-title flex items-center gap-2"><SlidersHorizontal className="size-4 text-primary" /> Interactive “What-if” Experiment Engine</h2><p className="mt-2 text-[11px] text-muted-foreground">Adjust atmospheric triggers and recalculate hail, lightning, and downburst probabilities in real time.</p></div>
-        <span className="status-pill bg-secondary text-muted-foreground">PROJECTED SCORE {score}%</span>
+    <section id="simulator" className="instrument-panel simulator-grid">
+      <div>
+        <span className="data-label">Scenario laboratory</span><h2 className="section-title">Atmospheric what-if simulator</h2>
+        <p className="mt-2 max-w-xl text-xs leading-5 text-muted-foreground">Adjust the environmental inputs to estimate how this cell responds. Results are simulated locally and do not alter the live observation feed.</p>
+        <div className="mt-6 space-y-5">{([
+          ["moisture", "Low-level moisture", "%", ThermometerSun],
+          ["instability", "Convective instability", "%", CloudLightning],
+          ["shear", "Vertical wind shear", "KT", Wind],
+        ] as const).map(([key, label, unit, Icon]) => <label key={key} className="sim-control"><span className="flex items-center gap-2"><Icon className="size-4 text-primary" />{label}</span><b>{values[key]} {unit}</b><input type="range" min="0" max="100" value={values[key]} onChange={(event) => update(key, Number(event.target.value))} /></label>)}</div>
       </div>
-      <div className="mt-6 grid gap-5 lg:grid-cols-3">
-        {[
-          ["core", "Storm convective core", "%", "cyan"], ["humidity", "Relative humidity", "%", "blue"], ["wind", "Surface inflow wind", "km/h", "amber"],
-        ].map(([key, label, unit, tone]) => (
-          <label key={key} className={cn("range-control", `range-${tone}`)}>
-            <span className="flex justify-between text-[11px] font-medium text-muted-foreground"><span>{label}</span><b>{values[key as keyof typeof values]} {unit}</b></span>
-            <input type="range" min="0" max="100" value={values[key as keyof typeof values]} onChange={(event) => update(key as keyof typeof values, Number(event.target.value))} />
-          </label>
-        ))}
-      </div>
-      <div className="mt-6 flex justify-end gap-2">
-        <Button variant="secondary" size="sm" onClick={() => setValues(defaults)}><RotateCcw className="size-3.5" /> Reset defaults</Button>
-        <Button size="sm" onClick={() => { setRunning(true); window.setTimeout(() => setRunning(false), 900); }} disabled={running}><Sparkles className="size-3.5" /> {running ? "RECALCULATING…" : "RUN RECALCULATION"}</Button>
+      <div className="simulation-output">
+        <div className="flex items-center justify-between"><span className="data-label">Projected outcome</span><span className="model-badge">MODEL READY</span></div>
+        <div className="score-gauge"><div style={{ "--score": `${score * 3.6}deg` } as React.CSSProperties}><span><strong>{score}</strong><small>/ 100</small></span></div></div>
+        <div className="output-grid"><div><span>Hail</span><b>{Math.round(score * .46)}%</b></div><div><span>Lightning</span><b>{Math.round(score * .72)}%</b></div><div><span>Downburst</span><b>{Math.round(score * .61)}%</b></div></div>
+        <div className="mt-4 flex gap-2"><Button className="flex-1" onClick={() => { setRunning(true); window.setTimeout(() => setRunning(false), 900); }} disabled={running}><Sparkles className="size-4" />{running ? "Running model…" : "Run simulation"}</Button><Button variant="outline" size="icon" aria-label="Reset simulator" onClick={() => setValues(defaults)}><RotateCcw className="size-4" /></Button></div>
       </div>
     </section>
   );
 }
 
-function Footer() {
-  return (
-    <footer className="mt-8 border-t border-border bg-footer text-footer-foreground">
-      <div className="mx-auto grid max-w-screen-2xl gap-10 px-4 py-12 sm:grid-cols-2 lg:grid-cols-4 md:px-7">
-        <div><BrandMark /><p className="mt-4 text-xs leading-5 text-footer-muted">Observe. Predict. Act. Real-time monitoring and short-range prediction of severe weather across India.</p></div>
-        <div><p className="footer-title">Platform</p><a href="#overview">Home</a><a href="#command-centre">Command Centre</a><a href="#architecture">Explore Architecture</a></div>
-        <div><p className="footer-title">Information</p><a href="#">About</a><a href="#">Data Sources</a><a href="#">Methodology</a></div>
-        <div><p className="footer-title">Policies</p><a href="#">Privacy</a><a href="#">Terms</a><a href="#" className="inline-flex items-center gap-1">Public data policy <ExternalLink className="size-3" /></a></div>
-      </div>
-      <div className="mx-auto flex max-w-screen-2xl flex-col gap-2 border-t border-footer-border px-4 py-5 text-[11px] text-footer-muted md:flex-row md:justify-between md:px-7"><span>© 2026 StormSense</span><span>Built for weather intelligence, public awareness and operational decision support.</span></div>
-    </footer>
-  );
-}
-
-function WeatherCommandCentre() {
+function StormOperations() {
   const [paused, setPaused] = useState(false);
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Header />
-      <main id="command-centre" className="mx-auto max-w-screen-2xl space-y-3 px-3 py-4 md:px-5">
-        <TopBar paused={paused} setPaused={setPaused} />
-        <div className="grid gap-3 lg:grid-cols-[minmax(0,1.65fr)_minmax(340px,.9fr)]"><MapPanel /><AnalystPanel /></div>
-        <RiskSummary />
+      <main className="mx-auto max-w-[1560px] space-y-4 px-3 py-4 md:px-6">
+        <OperationsBar paused={paused} onPause={() => setPaused((value) => !value)} />
+        <div className="operations-grid"><RadarMap /><TelemetryRail /></div>
         <HazardGrid />
-        <ImpactAlert />
-        <Timeline />
-        <ExperimentEngine />
-        <div className="flex flex-wrap items-center justify-between gap-2 px-1 pt-2 text-[10px] text-muted-foreground"><span className="flex items-center gap-2"><Database className="size-3 text-primary" /> Multi-source remote sensing · calibrated with open environmental reanalysis</span><span>Model: Random Forest · Validation: Synthetic operational mode</span></div>
+        <ForecastChart />
+        <Simulator />
+        <div className="data-footnote"><span><Database className="size-3.5" /> INSAT-3DR · Doppler weather radar · lightning network</span><span><Gauge className="size-3.5" /> Synthetic operational mode · Updated 08:06 IST</span></div>
       </main>
-      <Footer />
+      <footer className="ops-footer"><div className="mx-auto flex max-w-[1560px] flex-col justify-between gap-3 px-4 py-6 sm:flex-row sm:items-center md:px-6"><Brand /><p>Decision-support simulation for meteorological operations · StormSense 2026</p></div></footer>
     </div>
   );
 }
