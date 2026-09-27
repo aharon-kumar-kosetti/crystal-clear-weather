@@ -108,9 +108,9 @@ function OperationsBar({ paused, onPause }: { paused: boolean; onPause: () => vo
   return (
     <section className="ops-strip">
       <div className="min-w-0">
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:flex sm:flex-wrap">
           <span className="threat-badge"><ShieldAlert className="size-3.5" /> SEVERE WEATHER WATCH</span>
-          <span className="text-xs font-semibold text-foreground">Vijayawada Urban Zone</span>
+          <span className="min-w-0 truncate text-xs font-semibold text-foreground">Vijayawada Urban Zone</span>
         </div>
         <p className="mt-1 text-[11px] text-muted-foreground">Cell VJY-04 · 16.5062° N, 80.6480° E · Southeast track at 42 km/h</p>
       </div>
